@@ -2,7 +2,7 @@
 %define shortname graphlcd
 %define name	%shortname-base
 %define version	0.1.5
-%define release	1
+%define rel	2
 
 %define drivers_major	1
 %define graphics_major	2
@@ -12,7 +12,7 @@
 Summary:	GraphLCD drivers and tools
 Name:		%{name}
 Version:	%{version}
-Release:	%mkrel %{release}
+Release:	%mkrel %{rel}
 License:	GPL
 Group:		System/Kernel and hardware
 URL:		http://graphlcd.berlios.de/
