@@ -17,7 +17,6 @@ License:	GPL
 Group:		System/Kernel and hardware
 URL:		http://graphlcd.berlios.de/
 Source:		http://download.berlios.de/graphlcd/%name-%version.tar.bz2
-BuildRoot:	%{_tmppath}/%{name}-root
 BuildRequires:	freetype2-devel
 BuildRequires:	zlib-devel
 
