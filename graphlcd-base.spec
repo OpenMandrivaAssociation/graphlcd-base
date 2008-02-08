@@ -2,12 +2,13 @@
 %define shortname graphlcd
 %define name	%shortname-base
 %define version	0.1.5
-%define rel	2
+%define rel	3
 
 %define drivers_major	1
 %define graphics_major	2
 %define drivers_libname	%mklibname glcddrivers %drivers_major
 %define graphics_libname	%mklibname glcdgraphics %graphics_major
+%define devname	%mklibname -d %{shortname}
 
 Summary:	GraphLCD drivers and tools
 Name:		%{name}
@@ -33,7 +34,8 @@ Provides:	libglcddrivers = %version-%release
 Conflicts:	%{_lib}graphlcd1
 # While the library doesn't use graphlcd-config directly, it is
 # useless without the linked program using it.
-Requires:	%shortname-common = %version
+# (Anssi) FIXME: What? If the above is true then this is bogus.
+Requires:	%shortname-common >= %version
 
 %description -n %drivers_libname
 The GraphLCD base is a project to support graphical LC displays. It is
@@ -43,21 +45,27 @@ display its information.
 This package contains the driver library needed to run programs
 dynamically linked with GraphLCD.
 
-%package -n %drivers_libname-devel
-Summary:	Headers for glcddrivers
+%package -n %devname
+Summary:	Headers for graphlcd
 Group:		Development/C++
 Requires:	%drivers_libname = %version
+Requires:	%graphics_libname = %version
 Provides:	libglcddrivers-devel = %version-%release
 Provides:	glcddrivers-devel = %version-%release
-Conflicts:	%{_lib}graphlcd1-devel
+Provides:       libglcdgraphics-devel = %version-%release
+Provides:       glcdgraphics-devel = %version-%release
+Provides:	graphlcd-devel = %{version}-%{release}
+Obsoletes:	%{_lib}glcddrivers1-devel < %{version}-%{release}
+Obsoletes:	%{_lib}graphlcd1-devel < %{version}-%{release}
+Obsoletes:      %{_lib}glcdgraphics2-devel < %{version}-%{release}
 
-%description -n %drivers_libname-devel
+%description -n %devname
 The GraphLCD base is a project to support graphical LC displays. It is
 mainly used by the graphlcd plugin for the Video Disc Recorder to
 display its information.
 
 This package contains the headers that programmers will need to
-develop applications which will use glcddrivers.
+develop applications which will use graphlcd-base.
 
 %package -n %graphics_libname
 Summary:	GraphLCD shared graphics library
@@ -66,7 +74,8 @@ Provides:	libglcdgraphics = %version-%release
 Conflicts:	%{_lib}graphlcd1
 # While the library doesn't use graphlcd-config directly, it is
 # useless without the linked program using it.
-Requires:	%shortname-common = %version
+# (Anssi) FIXME: See previous fixme.
+Requires:	%shortname-common >= %version
 
 %description -n %graphics_libname
 The GraphLCD base is a project to support graphical LC displays. It is
@@ -75,22 +84,6 @@ display its information.
 
 This package contains the graphics library needed to run programs
 dynamically linked with GraphLCD.
-
-%package -n %graphics_libname-devel
-Summary:	Headers for glcdgraphics
-Group:		Development/C++
-Requires:	%graphics_libname = %version
-Provides:	libglcdgraphics-devel = %version-%release
-Provides:	glcdgraphics-devel = %version-%release
-Conflicts:	%{_lib}graphlcd1-devel
-
-%description -n %graphics_libname-devel
-The GraphLCD base is a project to support graphical LC displays. It is
-mainly used by the graphlcd plugin for the Video Disc Recorder to
-display its information.
-
-This package contains the headers that programmers will need to
-develop applications which will use glcdgraphics.
 
 %package -n %shortname-common
 Summary:	GraphLCD configuration file and documentation
@@ -145,22 +138,18 @@ rm -rf %{buildroot}
 %doc README
 %{_libdir}/libglcddrivers.so.%{drivers_major}*
 
-%files -n %drivers_libname-devel
+%files -n %devname
 %defattr(-,root,root)
 %doc README
 %{_includedir}/glcddrivers
+%{_includedir}/glcdgraphics
 %{_libdir}/libglcddrivers.so
+%{_libdir}/libglcdgraphics.so
 
 %files -n %graphics_libname
 %defattr(-,root,root)
 %doc README
 %{_libdir}/libglcdgraphics.so.%{graphics_major}*
-
-%files -n %graphics_libname-devel
-%defattr(-,root,root)
-%doc README
-%{_includedir}/glcdgraphics
-%{_libdir}/libglcdgraphics.so
 
 %files -n %shortname-common
 %doc README HISTORY docs
