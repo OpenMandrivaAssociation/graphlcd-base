@@ -128,10 +128,18 @@ install -m644 graphlcd.conf %{buildroot}%{_sysconfdir}
 %clean
 rm -rf %{buildroot}
 
+%if %mdkversion < 200900
 %post -n %graphics_libname -p /sbin/ldconfig
+%endif
+%if %mdkversion < 200900
 %postun -n %graphics_libname -p /sbin/ldconfig
+%endif
+%if %mdkversion < 200900
 %post -n %drivers_libname -p /sbin/ldconfig
+%endif
+%if %mdkversion < 200900
 %postun -n %drivers_libname -p /sbin/ldconfig
+%endif
 
 %files -n %drivers_libname
 %defattr(-,root,root)
