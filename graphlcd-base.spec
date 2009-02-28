@@ -2,7 +2,7 @@
 %define shortname graphlcd
 %define name	%shortname-base
 %define version	0.1.5
-%define rel	3
+%define rel	4
 
 %define drivers_major	1
 %define graphics_major	2
@@ -18,6 +18,9 @@ License:	GPL
 Group:		System/Kernel and hardware
 URL:		http://graphlcd.berlios.de/
 Source:		http://download.berlios.de/graphlcd/%name-%version.tar.bz2
+Patch0:		graphlcd-base-01_libserdisp.dpatch
+Patch1:		graphlcd-base-02_utf8.dpatch
+Patch2:		graphlcd-base-03_gcc-43.dpatch
 BuildRoot:	%{_tmppath}/%{name}-root
 BuildRequires:	freetype2-devel
 BuildRequires:	zlib-devel
@@ -110,6 +113,9 @@ This package contains tools to use with GraphLCD.
 
 %prep
 %setup -q
+%patch0 -p1
+%patch1 -p1
+%patch2 -p1
 # don't strip nor chmod to root
 perl -pi -e 's,-o root -g root -s,,' $(find -name Makefile)
 
