@@ -2,7 +2,7 @@
 %define shortname graphlcd
 %define name	%shortname-base
 %define version	0.1.5
-%define rel	5
+%define rel	6
 
 %define drivers_major	1
 %define graphics_major	2
