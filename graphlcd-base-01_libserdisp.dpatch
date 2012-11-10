@@ -1,0 +1,28 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 01_libserdisp.dpatch by Tobias Grimm <tg@e-tobi.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Load libserdisp.so.1 instead of libserdisp.so
+
+@DPATCH@
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/serdisp.c graphlcd-base-0.1.5/glcddrivers/serdisp.c
+--- graphlcd-base-0.1.5~/glcddrivers/serdisp.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/serdisp.c	2008-03-26 03:03:46.000000000 +0100
+@@ -58,14 +58,14 @@
+ 
+     // dynamically load serdisplib using dlopen() & co.
+ 
+-    sdhnd = dlopen("libserdisp.so", RTLD_LAZY);
++    sdhnd = dlopen("libserdisp.so.1", RTLD_LAZY);
+     if (!sdhnd) { // try /usr/local/lib
+-        sdhnd = dlopen("/usr/local/lib/libserdisp.so", RTLD_LAZY);
++        sdhnd = dlopen("/usr/local/lib/libserdisp.so.1", RTLD_LAZY);
+     }
+ 
+     if (!sdhnd) { // serdisplib seems not to be installed
+         syslog(LOG_ERR, "%s: error: unable to dynamically load library '%s'. Err: %s (cDriver::Init)\n",
+-        config->name.c_str(), "libserdisp.so", "not found");
++        config->name.c_str(), "libserdisp.so.1", "not found");
+         return -1;
+     }
+ 

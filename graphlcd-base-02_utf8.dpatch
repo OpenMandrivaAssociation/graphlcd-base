@@ -1,0 +1,735 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 02_utf8.dpatch by trantor @ vdrportal.de
+## http://www.vdr-portal.de/board/thread.php?threadid=65363
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Adds utf8 compatibility
+
+@DPATCH@
+diff -Nru -x.svn graphlcd-base-0.1.5/glcdgraphics/bitmap.c graphlcd-base-0.1.5-utf8/glcdgraphics/bitmap.c
+--- graphlcd-base-0.1.5/glcdgraphics/bitmap.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5-utf8/glcdgraphics/bitmap.c	2007-06-10 20:53:12.000000000 +0200
+@@ -16,6 +16,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <math.h>
++#include <syslog.h>
+ 
+ #include "bitmap.h"
+ #include "common.h"
+@@ -506,7 +507,11 @@
+     int xt;
+     int yt;
+     int i;
+-    char c;
++    int c;
++    int c0;
++    int c1;
++    int c2;
++    int c3;
+     int start;
+ 
+     clip(x, 0, width - 1);
+@@ -547,6 +552,28 @@
+         for (i = start; i < (int) text.length(); i++)
+         {
+             c = text[i];
++            c0 = text[i];
++            c1 = text[i+1];
++            c2 = text[i+2];
++            c3 = text[i+3];
++			c0 &=0xff; c1 &=0xff; c2 &=0xff; c3 &=0xff;
++
++	    	if( c0 >= 0xc2 && c0 <= 0xdf && c1 >= 0x80 && c1 <= 0xbf ){ //2 byte UTF-8 sequence found
++				i+=1;
++				c = ((c0&0x1f)<<6) | (c1&0x3f);
++	    	}else if(  (c0 == 0xE0 && c1 >= 0xA0 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf) 
++					|| (c0 >= 0xE1 && c1 <= 0xEC && c1 >= 0x80 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf) 
++					|| (c0 == 0xED && c1 >= 0x80 && c1 <= 0x9f && c2 >= 0x80 && c2 <= 0xbf) 
++					|| (c0 >= 0xEE && c0 <= 0xEF && c1 >= 0x80 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf) ){  //3 byte UTF-8 sequence found
++				c = ((c0&0x0f)<<4) | ((c1&0x3f)<<6) | (c2&0x3f);
++				i+=2;	
++	    	}else if(  (c0 == 0xF0 && c1 >= 0x90 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf && c3 >= 0x80 && c3 <= 0xbf) 
++					|| (c0 >= 0xF1 && c0 >= 0xF3 && c1 >= 0x80 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf && c3 >= 0x80 && c3 <= 0xbf) 
++					|| (c0 == 0xF4 && c1 >= 0x80 && c1 <= 0x8f && c2 >= 0x80 && c2 <= 0xbf && c3 >= 0x80 && c3 <= 0xbf) ){  //4 byte UTF-8 sequence found
++				c = ((c0&0x07)<<2) | ((c1&0x3f)<<4) | ((c2&0x3f)<<6) | (c3&0x3f);
++				i+=3;
++	    	}
++			
+             if (xt > xmax)
+             {
+                 i = text.length();
+@@ -589,7 +616,7 @@
+     return xt;
+ }
+ 
+-int cBitmap::DrawCharacter(int x, int y, int xmax, char c, const cFont * font,
++int cBitmap::DrawCharacter(int x, int y, int xmax, int c, const cFont * font,
+                            eColor color, int skipPixels)
+ {
+     const cBitmap * charBitmap;
+@@ -804,4 +831,53 @@
+     }
+ }
+ 
++#ifdef HAVE_FREETYPE2
++
++cBitmapFt2::cBitmapFt2(int width, int height, int ch, unsigned char * data)
++:   cBitmap(width, height, data)
++{
++    charcode = ch;
++}
++
++cBitmapFt2::~cBitmapFt2()
++{
++}
++
++int cBitmapFt2::GetCharcode( void ) const
++{
++    return charcode;
++}
++
++cBitmapCache::cBitmapCache()
++{
++	start = NULL;
++	next = NULL;
++	last = NULL;
++}
++
++cBitmapCache::cBitmapCache( void *ptr)
++{
++	start = NULL;
++	next = NULL;
++	last = NULL;
++	pointer = ptr;
++}
++
++cBitmapCache::~cBitmapCache()
++{
++}
++
++bool cBitmapCache::PushBack(void *ptr)
++{
++	cBitmapCache *newptr = new cBitmapCache(ptr);
++	if( start == NULL ){ start = newptr; last = newptr; }
++	else{
++		last->next = newptr;
++		last=newptr;
++	}
++	return true;
++}
++
++#endif
++
+ } // end of namespace
+diff -Nru -x.svn graphlcd-base-0.1.5/glcdgraphics/bitmap.h graphlcd-base-0.1.5-utf8/glcdgraphics/bitmap.h
+--- graphlcd-base-0.1.5/glcdgraphics/bitmap.h	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5-utf8/glcdgraphics/bitmap.h	2007-06-10 20:53:12.000000000 +0200
+@@ -60,7 +60,7 @@
+     void DrawBitmap(int x, int y, const cBitmap & bitmap, eColor color);
+     int DrawText(int x, int y, int xmax, const std::string & text, const cFont * font,
+                  eColor color = clrBlack, bool proportional = true, int skipPixels = 0);
+-    int DrawCharacter(int x, int y, int xmax, char c, const cFont * font,
++    int DrawCharacter(int x, int y, int xmax, int c, const cFont * font,
+                       eColor color = clrBlack, int skipPixels = 0);
+ 
+     cBitmap * SubBitmap(int x1, int y1, int x2, int y2) const;
+@@ -70,6 +70,38 @@
+     void SavePBM(const std::string & fileName);
+ };
+ 
++#ifdef HAVE_FREETYPE2
++class cBitmapFt2: public cBitmap
++{
++private:
++protected:
++    int charcode;
++public:
++    //cBitmapFt2(void):cBitmap(1,1) {charcode=0;};
++    cBitmapFt2(int width, int height, int ch, unsigned char * data = NULL);
++    ~cBitmapFt2();
++    int GetCharcode( void ) const;
++
++};
++
++class cBitmapCache
++{
++private:
++protected:
++public:
++	cBitmapCache *start; // start bitmap
++	cBitmapCache *next;  // next  bitmap
++	cBitmapCache *last;  // last  bitmap
++	void *pointer;
++	
++	cBitmapCache();
++	cBitmapCache( void * );
++	~cBitmapCache();
++	
++	bool PushBack( void * );
++};
++#endif
++
+ } // end of namespace
+ 
+ #endif
+diff -Nru -x.svn graphlcd-base-0.1.5/glcdgraphics/font.c graphlcd-base-0.1.5-utf8/glcdgraphics/font.c
+--- graphlcd-base-0.1.5/glcdgraphics/font.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5-utf8/glcdgraphics/font.c	2007-06-10 20:53:12.000000000 +0200
+@@ -69,6 +69,7 @@
+ {
+     // cleanup if we already had a loaded font
+     Unload();
++    SetFontType(1); //original fonts
+ 
+     FILE * fontFile;
+     int i;
+@@ -185,6 +186,7 @@
+ {
+     // cleanup if we already had a loaded font
+     Unload();
++	SetFontType(2); // ft2 fonts
+ #ifdef HAVE_FREETYPE2
+     if (access(fileName.c_str(), F_OK) != 0)
+     {
+@@ -192,9 +194,6 @@
+         return false;
+     }
+     // file exists
+-    FT_Library library;
+-    FT_Face face;
+-    FT_GlyphSlot slot;
+ 
+     int error = FT_Init_FreeType(&library);
+     if (error)
+@@ -223,168 +222,79 @@
+         return false;
+     }
+ 
+-    // set slot
+-    slot = face->glyph;
+-
+     // set Size
+     FT_Set_Char_Size(face, 0, size * 64, 0, 0);
+ 
+-    wchar_t utf_buff[256];
+-    if (dingBats)
+-    {
+-/*
+-        FT_CharMap charmap = 0;
+-        for (int n = 0; n < face->num_charmaps; n++)
+-        {
+-            if (face->charmaps[n]->platform_id == 3 &&
+-                face->charmaps[n]->encoding_id == 0)
+-            {
+-                charmap = face->charmaps[n];
+-                //break;
+-            }
+-        }
+-        if (charmap)
+-            syslog(LOG_ERR, "cFont::LoadFT2: platform_id: %d, encoding_id: %d", charmap->platform_id, charmap->encoding_id);
+-        error = FT_Set_Charmap(_face, charmap);
+-        if (error)
+-        {
+-            syslog(LOG_ERR, "cFont::LoadFT2: FT_Select_Charmap encoding not supported: %d", charmap->encoding_id);
+-        }
+-*/
+-    }
+-    else
+-    {
+-        iconv_t cd;
+-        if ((cd = iconv_open("WCHAR_T", encoding.c_str())) == (iconv_t) -1)
+-        {
+-            syslog(LOG_ERR, "cFont::LoadFT2: Iconv encoding not supported: %s", encoding.c_str());
+-            error = FT_Done_Face(face);
+-            syslog(LOG_ERR, "cFont::LoadFT2: FT_Done_Face(..) returned (%d)", error);
+-            error = FT_Done_FreeType(library);
+-            syslog(LOG_ERR, "cFont::LoadFT2: FT_Done_FreeType(..) returned (%d)", error);
+-            return false;
+-        }
+-        for (int c = 0; c < 256; c++)
+-        {
+-            char char_buff = c;
+-            wchar_t wchar_buff;
+-            char * in_buff,* out_buff;
+-            size_t in_len, out_len, count;
+-
+-            in_len = 1;
+-            out_len = 4;
+-            in_buff = (char *) &char_buff;
+-            out_buff = (char *) &wchar_buff;
+-            count = iconv(cd, &in_buff, &in_len, &out_buff, &out_len);
+-            if ((size_t) -1 == count)
+-            {
+-                utf_buff[c] = 0;
+-            }
+-            utf_buff[c] = wchar_buff;
+-        }
+-        iconv_close(cd);
+-    }
+-
+     // get some global parameters
+-    totalHeight = (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
+-    totalWidth = face->size->metrics.max_advance >> 6;
+-    totalAscent = face->size->metrics.ascender >> 6;
+-    lineHeight = face->size->metrics.height >> 6;
+-    spaceBetween = 0;
+-#if 0
+-    syslog(LOG_DEBUG, "cFont::LoadFT2: totalHeight = %d", totalHeight);
+-    syslog(LOG_DEBUG, "cFont::LoadFT2: totalWidth = %d", totalWidth);
+-    syslog(LOG_DEBUG, "cFont::LoadFT2: totalAscent = %d", totalAscent);
+-    syslog(LOG_DEBUG, "cFont::LoadFT2: lineHeight = %d", lineHeight);
+-    syslog(LOG_DEBUG, "cFont::LoadFT2: spaceBetween = %d", spaceBetween);
+-#endif
+-    // render glyphs for ASCII codes 0 to 255 in our bitmap class
+-    FT_UInt glyph_index;
+-    int num_char;
+-
+-    for (num_char = 0; num_char < 256; num_char++)
+-    {
+-        if (dingBats)
+-        {
+-            //Get FT char index & load the char
+-            error = FT_Load_Char(face, num_char, FT_LOAD_DEFAULT);
+-        }
+-        else
+-        {
+-            //Get FT char index
+-            glyph_index = FT_Get_Char_Index(face, utf_buff[num_char]);
+-            //Load the char
+-            error = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
+-        }
+-        if (error)
+-        {
+-            syslog(LOG_ERR, "cFont::LoadFT2: ERROR when calling FT_Load_Glyph: %x", error);
+-        }
+-
+-        // convert to a mono bitmap
+-        error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_MONO);
+-        if (error)
+-        {
+-            syslog(LOG_ERR, "cFont::LoadFT2: ERROR when calling FT_Render_Glyph: %x", error);
+-        }
++    SetTotalHeight( (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6) );
++    SetTotalWidth ( face->size->metrics.max_advance >> 6 );
++    SetTotalAscent( face->size->metrics.ascender >> 6 );
++    SetLineHeight ( face->size->metrics.height >> 6 );
++    SetSpaceBetween( 0 );
+ 
+-        // now, fill our pixel data
+-        cBitmap * charBitmap = new cBitmap(face->glyph->advance.x >> 6, totalHeight);
+-        charBitmap->Clear();
+-        unsigned char * bufPtr = face->glyph->bitmap.buffer;
+-        unsigned char pixel;
+-        for (int y = 0; y < face->glyph->bitmap.rows; y++)
+-        {
+-            for (int x = 0; x < face->glyph->bitmap.width; x++)
+-            {
+-                pixel = (bufPtr[x / 8] >> (7 - x % 8)) & 1;
+-                if (pixel)
+-                    charBitmap->DrawPixel((face->glyph->metrics.horiBearingX >> 6) + x,
+-                                          (face->size->metrics.ascender >> 6) - (face->glyph->metrics.horiBearingY >> 6) + y,
+-                                          GLCD::clrBlack);
+-            }
+-            bufPtr += face->glyph->bitmap.pitch;
+-        }
+-        SetCharacter((char) num_char, charBitmap);
+-    }
+-    error = FT_Done_Face(face);
+-    if (error)
+-    {
+-        syslog(LOG_ERR, "cFont::LoadFT2: FT_Done_Face(..) returned (%d)", error);
+-    }
+-    error = FT_Done_FreeType(library);
+-    if (error)
+-    {
+-        syslog(LOG_ERR, "cFont::LoadFT2: FT_Done_FreeType(..) returned (%d)", error);
+-    }
++    characters_cache=new cBitmapCache(); 
+     return true;
++
+ #else
+     syslog(LOG_ERR, "cFont::LoadFT2: glcdgraphics was compiled without FreeType2 support!!!");
+     return false;
+ #endif
+ }
+ 
+-int cFont::Width(char ch) const
++int cFont::Width(int ch) const
+ {
+-    if (characters[(unsigned char) ch])
+-        return characters[(unsigned char) ch]->Width();
+-    else
+-        return 0;
++#ifdef HAVE_FREETYPE2
++	if ( FontType() == 2){
++		cBitmapFt2 *cmybitmap=GetGlyph(ch);
++    	if (cmybitmap)
++        	return cmybitmap->Width();
++    	else
++        	return 0;
++	}else{
++#endif
++    	if (characters[(unsigned char) ch])
++        	return characters[(unsigned char) ch]->Width();
++    	else
++        	return 0;
++#ifdef HAVE_FREETYPE2
++	}
++#endif
+ }
+ 
+ int cFont::Width(const std::string & str) const
+ {
+     unsigned int i;
+-    int sum = 0;
++    int sum = 0; 
++    int c,c0,c1,c2,c3,symcount=0; 
+ 
+     for (i = 0; i < str.length(); i++)
+     {
+-        sum += Width(str[i]);
+-    }
+-    if (str.length() > 1)
+-    {
+-        sum += spaceBetween * (str.length() - 1);
++		c = str[i];
++		c0 = str[i];
++		c1 = str[i+1];
++		c2 = str[i+2];
++		c3 = str[i+3];
++		c0 &=0xff; c1 &=0xff; c2 &=0xff; c3 &=0xff;
++
++		if( c0 >= 0xc2 && c0 <= 0xdf && c1 >= 0x80 && c1 <= 0xbf ){ //2 byte UTF-8 sequence found
++	    	i+=1;
++			c = ((c0&0x1f)<<6) | (c1&0x3f);
++		}else if(  (c0 == 0xE0 && c1 >= 0xA0 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf) 
++			|| (c0 >= 0xE1 && c1 <= 0xEC && c1 >= 0x80 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf) 
++			|| (c0 == 0xED && c1 >= 0x80 && c1 <= 0x9f && c2 >= 0x80 && c2 <= 0xbf) 
++			|| (c0 >= 0xEE && c0 <= 0xEF && c1 >= 0x80 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf) ){  //3 byte UTF-8 sequence found
++			c = ((c0&0x0f)<<4) | ((c1&0x3f)<<6) | (c2&0x3f);
++			i+=2;	
++	    }else if(  (c0 == 0xF0 && c1 >= 0x90 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf && c3 >= 0x80 && c3 <= 0xbf) 
++			|| (c0 >= 0xF1 && c0 >= 0xF3 && c1 >= 0x80 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf && c3 >= 0x80 && c3 <= 0xbf) 
++			|| (c0 == 0xF4 && c1 >= 0x80 && c1 <= 0x8f && c2 >= 0x80 && c2 <= 0xbf && c3 >= 0x80 && c3 <= 0xbf) ){  //4 byte UTF-8 sequence found
++			c = ((c0&0x07)<<2) | ((c1&0x3f)<<4) | ((c2&0x3f)<<6) | (c3&0x3f);
++			i+=3;
++	    }
++		symcount++;
++        sum += Width(c);
+     }
++    sum += spaceBetween * (symcount - 1);
+     return sum;
+ }
+ 
+@@ -393,23 +303,58 @@
+     unsigned int i;
+     int sum = 0;
+ 
+-    for (i = 0; i < str.length() && i < len; i++)
+-    {
+-        sum += Width(str[i]);
+-    }
+-    if (std::min(str.length(), (size_t) len) > 1)
++    int c,c0,c1,c2,c3,symcount=0; 
++
++    for (i = 0; i < str.length() && symcount < len; i++)
+     {
+-        sum += spaceBetween * (std::min(str.length(), (size_t) len) - 1);
++		c = str[i];
++		c0 = str[i];
++		c1 = str[i+1];
++		c2 = str[i+2];
++		c3 = str[i+3];
++		c0 &=0xff; c1 &=0xff; c2 &=0xff; c3 &=0xff;
++
++		if( c0 >= 0xc2 && c0 <= 0xdf && c1 >= 0x80 && c1 <= 0xbf ){ //2 byte UTF-8 sequence found
++	    	i+=1;
++			c = ((c0&0x1f)<<6) | (c1&0x3f);
++		}else if(  (c0 == 0xE0 && c1 >= 0xA0 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf) 
++			|| (c0 >= 0xE1 && c1 <= 0xEC && c1 >= 0x80 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf) 
++			|| (c0 == 0xED && c1 >= 0x80 && c1 <= 0x9f && c2 >= 0x80 && c2 <= 0xbf) 
++			|| (c0 >= 0xEE && c0 <= 0xEF && c1 >= 0x80 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf) ){  //3 byte UTF-8 sequence found
++			c = ((c0&0x0f)<<4) | ((c1&0x3f)<<6) | (c2&0x3f);
++			i+=2;	
++	    }else if(  (c0 == 0xF0 && c1 >= 0x90 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf && c3 >= 0x80 && c3 <= 0xbf) 
++			|| (c0 >= 0xF1 && c0 >= 0xF3 && c1 >= 0x80 && c1 <= 0xbf && c2 >= 0x80 && c2 <= 0xbf && c3 >= 0x80 && c3 <= 0xbf) 
++			|| (c0 == 0xF4 && c1 >= 0x80 && c1 <= 0x8f && c2 >= 0x80 && c2 <= 0xbf && c3 >= 0x80 && c3 <= 0xbf) ){  //4 byte UTF-8 sequence found
++			c = ((c0&0x07)<<2) | ((c1&0x3f)<<4) | ((c2&0x3f)<<6) | (c3&0x3f);
++			i+=3;
++	    }
++		symcount++;
++        sum += Width(c);
+     }
++    sum += spaceBetween * (symcount - 1);
++
+     return sum;
+ }
+ 
+-int cFont::Height(char ch) const
++int cFont::Height(int ch) const
+ {
+-    if (characters[(unsigned char) ch])
+-        return characters[(unsigned char) ch]->Height();
+-    else
+-        return 0;
++#ifdef HAVE_FREETYPE2
++	if ( FontType() == 2){
++		cBitmapFt2 *cmybitmap=GetGlyph(ch);
++    	if (cmybitmap)
++        	return cmybitmap->Height();
++    	else
++        	return 0;
++	}else{
++#endif
++    	if (characters[(unsigned char) ch])
++        	return characters[(unsigned char) ch]->Height();
++    	else
++        	return 0;
++#ifdef HAVE_FREETYPE2
++	}
++#endif
+ }
+ 
+ int cFont::Height(const std::string & str) const
+@@ -432,11 +377,83 @@
+     return sum;
+ }
+ 
+-const cBitmap * cFont::GetCharacter(char ch) const
++const cBitmap * cFont::GetCharacter(int ch) const
+ {
++#ifdef HAVE_FREETYPE2
++	if ( FontType() == 2){
++		return GetGlyph(ch);
++	}else{
++#endif
+     return characters[(unsigned char) ch];
++#ifdef HAVE_FREETYPE2
++	}
++#endif
+ }
+ 
++#ifdef HAVE_FREETYPE2
++cBitmapFt2* cFont::GetGlyph(int c) const
++{
++    //lookup in cache 
++	cBitmapCache *ptr = characters_cache->start;
++	while(ptr != NULL){
++		int charcode = ((cBitmapFt2 *)(ptr->pointer))->GetCharcode();
++    	if(c == charcode){
++			return ((cBitmapFt2 *)(ptr->pointer)); 
++		}
++		ptr = ptr->next;
++	}
++
++    FT_UInt glyph_index;
++    //Get FT char index
++    glyph_index = FT_Get_Char_Index(face, c);
++
++    //Load the char
++    int error = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
++    if (error)
++    {
++	syslog(LOG_ERR, "cFont::LoadFT2: ERROR when calling FT_Load_Glyph: %x", error);
++    }
++
++	FT_Render_Mode  rmode = FT_RENDER_MODE_MONO;
++#if ( (FREETYPE_MAJOR == 2 && FREETYPE_MINOR == 1 && FREETYPE_PATCH >= 7) || (FREETYPE_MAJOR == 2 && FREETYPE_MINOR == 2 && FREETYPE_PATCH <= 1) )
++    	if(c == 32) rmode = FT_RENDER_MODE_NORMAL;
++#endif
++	
++    // convert to a mono bitmap
++    error = FT_Render_Glyph(face->glyph, rmode);
++    if (error)
++    {
++        syslog(LOG_ERR, "cFont::LoadFT2: ERROR when calling FT_Render_Glyph: %x", error);
++    }else{
++        // now, fill our pixel data
++    	cBitmapFt2 *charBitmap = new cBitmapFt2(face->glyph->advance.x >> 6, TotalHeight(), c);
++    	charBitmap->Clear();
++    	unsigned char * bufPtr = face->glyph->bitmap.buffer;
++    	unsigned char pixel;
++		for (int y = 0; y < face->glyph->bitmap.rows; y++)
++    	{
++	    	for (int x = 0; x < face->glyph->bitmap.width; x++)
++    		{
++        		pixel = (bufPtr[x / 8] >> (7 - x % 8)) & 1;
++    			if (pixel)
++            	    charBitmap->DrawPixel((face->glyph->metrics.horiBearingX >> 6) + x,
++                                      (face->size->metrics.ascender >> 6) - (face->glyph->metrics.horiBearingY >> 6) + y,
++                                      GLCD::clrBlack);
++    		}
++    	    bufPtr += face->glyph->bitmap.pitch;
++		}
++
++		// adjust maxwidth if necessary
++    	//if (totalWidth < charBitmap->Width())
++        //	totalWidth = charBitmap->Width();
++
++		characters_cache->PushBack(charBitmap);
++		return charBitmap;
++    }
++	return NULL;
++}
++#endif
++
+ void cFont::SetCharacter(char ch, cBitmap * bitmapChar)
+ {
+     // adjust maxwidth if necessary
+@@ -578,4 +595,5 @@
+         *ActualWidth = textWidth;
+ }
+ 
++
+ } // end of namespace
+diff -Nru -x.svn graphlcd-base-0.1.5/glcdgraphics/font.h graphlcd-base-0.1.5-utf8/glcdgraphics/font.h
+--- graphlcd-base-0.1.5/glcdgraphics/font.h	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5-utf8/glcdgraphics/font.h	2007-06-10 20:53:12.000000000 +0200
+@@ -18,6 +18,12 @@
+ #include <string>
+ #include <vector>
+ 
++#ifdef HAVE_FREETYPE2
++#include <ft2build.h>
++#include FT_FREETYPE_H
++#include <iconv.h>
++#endif
++
+ #include "bitmap.h"
+ 
+ namespace GLCD
+@@ -33,9 +39,20 @@
+     int lineHeight;
+ 
+     cBitmap * characters[256];
++#ifdef HAVE_FREETYPE2
++    int fontType;	//original or FT2 font, 1-original, 2-ft2
++
++    cBitmapCache *characters_cache; 
++    FT_Library library;
++    FT_Face face;
++    FT_GlyphSlot slot;
++#endif
+ protected:
+     void Init();
+     void Unload();
++#ifdef HAVE_FREETYPE2
++	cBitmapFt2* GetGlyph(int c) const;
++#endif
+ public:
+     cFont();
+     ~cFont();
+@@ -50,20 +67,25 @@
+     int SpaceBetween() const { return spaceBetween; };
+     int LineHeight() const { return lineHeight; };
+ 
++#ifdef HAVE_FREETYPE2
++    int FontType() const { return fontType; };
++    void SetFontType(int type) { fontType = type; };
++#endif
++
+     void SetTotalWidth(int width) { totalWidth = width; };
+     void SetTotalHeight(int height) { totalHeight = height; };
+     void SetTotalAscent(int ascent) { totalAscent = ascent; };
+     void SetSpaceBetween(int width) { spaceBetween = width; };
+     void SetLineHeight(int height) { lineHeight = height; };
+ 
+-    int Width(char ch) const;
++    int Width(int ch) const;
+     int Width(const std::string & str) const;
+     int Width(const std::string & str, unsigned int len) const;
+-    int Height(char ch) const;
++    int Height(int ch) const;
+     int Height(const std::string & str) const;
+     int Height(const std::string & str, unsigned int len) const;
+ 
+-    const cBitmap * GetCharacter(char ch) const;
++    const cBitmap * GetCharacter(int ch) const;
+     void SetCharacter(char ch, cBitmap * bitmapChar);
+ 
+     void WrapText(int Width, int Height, std::string & Text,
+diff -Nru -x.svn graphlcd-base-0.1.5/tools/crtfont/Makefile graphlcd-base-0.1.5-utf8/tools/crtfont/Makefile
+--- graphlcd-base-0.1.5/tools/crtfont/Makefile	2007-02-25 18:41:30.000000000 +0100
++++ graphlcd-base-0.1.5-utf8/tools/crtfont/Makefile	2007-06-10 20:53:09.000000000 +0200
+@@ -28,6 +28,17 @@
+ 
+ -include $(DEPFILE)
+ 
++ifdef HAVE_FREETYPE2
++	ifneq ($(shell which freetype-config),)
++		INCLUDES += $(shell freetype-config --cflags)
++		LIBS += $(shell freetype-config --libs)
++	else
++		INCLUDES += -I/usr/include/freetype -I/usr/local/include/freetype
++		LIBS += -lfreetype
++	endif
++	DEFINES += -DHAVE_FREETYPE2
++endif### Targets:
++
+ # The main program:
+ 
+ $(PRGNAME): $(OBJS)
+diff -Nru -x.svn graphlcd-base-0.1.5/tools/lcdtestpattern/Makefile graphlcd-base-0.1.5-utf8/tools/lcdtestpattern/Makefile
+--- graphlcd-base-0.1.5/tools/lcdtestpattern/Makefile	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5-utf8/tools/lcdtestpattern/Makefile	2007-06-10 20:53:09.000000000 +0200
+@@ -29,6 +29,17 @@
+ 
+ -include $(DEPFILE)
+ 
++ifdef HAVE_FREETYPE2
++	ifneq ($(shell which freetype-config),)
++		INCLUDES += $(shell freetype-config --cflags)
++		LIBS += $(shell freetype-config --libs)
++	else
++		INCLUDES += -I/usr/include/freetype -I/usr/local/include/freetype
++		LIBS += -lfreetype
++	endif
++	DEFINES += -DHAVE_FREETYPE2
++endif### Targets:
++
+ # The main program:
+ 
+ $(PRGNAME): $(OBJS)
+diff -Nru -x.svn graphlcd-base-0.1.5/tools/showpic/Makefile graphlcd-base-0.1.5-utf8/tools/showpic/Makefile
+--- graphlcd-base-0.1.5/tools/showpic/Makefile	2007-02-25 18:41:30.000000000 +0100
++++ graphlcd-base-0.1.5-utf8/tools/showpic/Makefile	2007-06-10 20:53:10.000000000 +0200
+@@ -29,6 +29,17 @@
+ 
+ -include $(DEPFILE)
+ 
++ifdef HAVE_FREETYPE2
++	ifneq ($(shell which freetype-config),)
++		INCLUDES += $(shell freetype-config --cflags)
++		LIBS += $(shell freetype-config --libs)
++	else
++		INCLUDES += -I/usr/include/freetype -I/usr/local/include/freetype
++		LIBS += -lfreetype
++	endif
++	DEFINES += -DHAVE_FREETYPE2
++endif### Targets:
++
+ # The main program:
+ 
+ $(PRGNAME): $(OBJS)
+diff -Nru -x.svn graphlcd-base-0.1.5/tools/showtext/Makefile graphlcd-base-0.1.5-utf8/tools/showtext/Makefile
+--- graphlcd-base-0.1.5/tools/showtext/Makefile	2007-02-25 18:41:30.000000000 +0100
++++ graphlcd-base-0.1.5-utf8/tools/showtext/Makefile	2007-06-10 20:53:10.000000000 +0200
+@@ -29,6 +29,17 @@
+ 
+ -include $(DEPFILE)
+ 
++ifdef HAVE_FREETYPE2
++	ifneq ($(shell which freetype-config),)
++		INCLUDES += $(shell freetype-config --cflags)
++		LIBS += $(shell freetype-config --libs)
++	else
++		INCLUDES += -I/usr/include/freetype -I/usr/local/include/freetype
++		LIBS += -lfreetype
++	endif
++	DEFINES += -DHAVE_FREETYPE2
++endif### Targets:
++
+ # The main program:
+ 
+ $(PRGNAME): $(OBJS)

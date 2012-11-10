@@ -1,0 +1,239 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 03_gcc-43.dpatch by Tobias Grimm <etobi@debian.org>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+@DPATCH@
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/avrctl.c graphlcd-base-0.1.5/glcddrivers/avrctl.c
+--- graphlcd-base-0.1.5~/glcddrivers/avrctl.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/avrctl.c	2008-11-12 19:41:51.000000000 +0100
+@@ -11,6 +11,7 @@
+ 
+ #include <stdint.h>
+ #include <syslog.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/config.c graphlcd-base-0.1.5/glcddrivers/config.c
+--- graphlcd-base-0.1.5~/glcddrivers/config.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/config.c	2008-11-12 19:41:51.000000000 +0100
+@@ -11,6 +11,8 @@
+ 
+ #include <syslog.h>
+ #include <fstream>
++#include <cstring>
++#include <cstdlib>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/framebuffer.c graphlcd-base-0.1.5/glcddrivers/framebuffer.c
+--- graphlcd-base-0.1.5~/glcddrivers/framebuffer.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/framebuffer.c	2008-11-12 19:41:51.000000000 +0100
+@@ -16,6 +16,8 @@
+ #include <unistd.h>
+ #include <sys/mman.h>
+ #include <sys/ioctl.h>
++#include <cstdlib>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/g15daemon.c graphlcd-base-0.1.5/glcddrivers/g15daemon.c
+--- graphlcd-base-0.1.5~/glcddrivers/g15daemon.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/g15daemon.c	2008-11-12 19:41:51.000000000 +0100
+@@ -19,6 +19,7 @@
+ #include <poll.h>
+ #include <arpa/inet.h>
+ #include <unistd.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/gu126x64D-K610A4.c graphlcd-base-0.1.5/glcddrivers/gu126x64D-K610A4.c
+--- graphlcd-base-0.1.5~/glcddrivers/gu126x64D-K610A4.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/gu126x64D-K610A4.c	2008-11-12 19:41:51.000000000 +0100
+@@ -25,6 +25,8 @@
+ #include <syslog.h>
+ #include <unistd.h>
+ #include <sys/time.h>
++#include <cstring>
++#include <cstdlib>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/gu140x32f.c graphlcd-base-0.1.5/glcddrivers/gu140x32f.c
+--- graphlcd-base-0.1.5~/glcddrivers/gu140x32f.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/gu140x32f.c	2008-11-12 19:41:51.000000000 +0100
+@@ -21,6 +21,7 @@
+ #include <syslog.h>
+ #include <unistd.h>
+ #include <sys/time.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/gu256x64-372.c graphlcd-base-0.1.5/glcddrivers/gu256x64-372.c
+--- graphlcd-base-0.1.5~/glcddrivers/gu256x64-372.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/gu256x64-372.c	2008-11-12 19:41:51.000000000 +0100
+@@ -23,6 +23,7 @@
+ #include <syslog.h>
+ #include <unistd.h>
+ #include <sys/time.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/gu256x64-3900.c graphlcd-base-0.1.5/glcddrivers/gu256x64-3900.c
+--- graphlcd-base-0.1.5~/glcddrivers/gu256x64-3900.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/gu256x64-3900.c	2008-11-12 19:41:51.000000000 +0100
+@@ -29,6 +29,7 @@
+ #include <unistd.h>
+ #include <termios.h>
+ #include <sys/time.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/hd61830.c graphlcd-base-0.1.5/glcddrivers/hd61830.c
+--- graphlcd-base-0.1.5~/glcddrivers/hd61830.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/hd61830.c	2008-11-12 19:41:51.000000000 +0100
+@@ -11,6 +11,7 @@
+ 
+ #include <syslog.h>
+ #include <sys/time.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/image.c graphlcd-base-0.1.5/glcddrivers/image.c
+--- graphlcd-base-0.1.5~/glcddrivers/image.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/image.c	2008-11-12 19:41:51.000000000 +0100
+@@ -12,6 +12,7 @@
+ 
+ #include <stdio.h>
+ #include <syslog.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/ks0108.c graphlcd-base-0.1.5/glcddrivers/ks0108.c
+--- graphlcd-base-0.1.5~/glcddrivers/ks0108.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/ks0108.c	2008-11-12 19:41:51.000000000 +0100
+@@ -11,6 +11,7 @@
+ 
+ #include <syslog.h>
+ #include <sys/time.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/network.c graphlcd-base-0.1.5/glcddrivers/network.c
+--- graphlcd-base-0.1.5~/glcddrivers/network.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/network.c	2008-11-12 19:41:51.000000000 +0100
+@@ -18,6 +18,7 @@
+ #include <netinet/in.h>
+ #include <arpa/inet.h>
+ #include <errno.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/noritake800.c graphlcd-base-0.1.5/glcddrivers/noritake800.c
+--- graphlcd-base-0.1.5~/glcddrivers/noritake800.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/noritake800.c	2008-11-12 19:41:51.000000000 +0100
+@@ -34,6 +34,7 @@
+ #include <syslog.h>
+ #include <unistd.h>
+ #include <sys/time.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/sed1330.c graphlcd-base-0.1.5/glcddrivers/sed1330.c
+--- graphlcd-base-0.1.5~/glcddrivers/sed1330.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/sed1330.c	2008-11-12 19:41:51.000000000 +0100
+@@ -19,6 +19,8 @@
+ 
+ #include <syslog.h>
+ #include <sys/time.h>
++#include <cstring>
++#include <cstdlib>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/sed1520.c graphlcd-base-0.1.5/glcddrivers/sed1520.c
+--- graphlcd-base-0.1.5~/glcddrivers/sed1520.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/sed1520.c	2008-11-12 19:41:51.000000000 +0100
+@@ -11,6 +11,7 @@
+ 
+ #include <syslog.h>
+ #include <sys/time.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/simlcd.c graphlcd-base-0.1.5/glcddrivers/simlcd.c
+--- graphlcd-base-0.1.5~/glcddrivers/simlcd.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/simlcd.c	2008-11-12 19:41:51.000000000 +0100
+@@ -13,6 +13,7 @@
+ 
+ #include <stdio.h>
+ #include <syslog.h>
++#include <cstring>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcddrivers/t6963c.c graphlcd-base-0.1.5/glcddrivers/t6963c.c
+--- graphlcd-base-0.1.5~/glcddrivers/t6963c.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcddrivers/t6963c.c	2008-11-12 19:41:51.000000000 +0100
+@@ -12,6 +12,8 @@
+  */
+ 
+ #include <syslog.h>
++#include <cstring>
++#include <cstdlib>
+ 
+ #include "common.h"
+ #include "config.h"
+diff -urNad graphlcd-base-0.1.5~/glcdgraphics/glcd.c graphlcd-base-0.1.5/glcdgraphics/glcd.c
+--- graphlcd-base-0.1.5~/glcdgraphics/glcd.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcdgraphics/glcd.c	2008-11-12 19:41:51.000000000 +0100
+@@ -16,7 +16,7 @@
+ #include <stdint.h>
+ #include <syslog.h>
+ 
+-#include <string>
++#include <cstring>
+ 
+ #include "bitmap.h"
+ #include "glcd.h"
+diff -urNad graphlcd-base-0.1.5~/glcdgraphics/pbm.c graphlcd-base-0.1.5/glcdgraphics/pbm.c
+--- graphlcd-base-0.1.5~/glcdgraphics/pbm.c	2007-02-25 18:41:31.000000000 +0100
++++ graphlcd-base-0.1.5/glcdgraphics/pbm.c	2008-11-12 19:41:51.000000000 +0100
+@@ -12,8 +12,9 @@
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <syslog.h>
++#include <cstdlib>
+ 
+-#include <string>
++#include <cstring>
+ 
+ #include "bitmap.h"
+ #include "pbm.h"
+diff -urNad graphlcd-base-0.1.5~/tools/convpic/bmp.c graphlcd-base-0.1.5/tools/convpic/bmp.c
+--- graphlcd-base-0.1.5~/tools/convpic/bmp.c	2007-02-25 18:41:30.000000000 +0100
++++ graphlcd-base-0.1.5/tools/convpic/bmp.c	2008-11-12 19:41:51.000000000 +0100
+@@ -29,8 +29,8 @@
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <string.h>
+-
+-#include <string>
++#include <cstring>
++#include <cstdlib>
+ 
+ #include <glcdgraphics/bitmap.h>
+ #include <glcdgraphics/image.h>
