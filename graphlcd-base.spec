@@ -176,3 +176,51 @@ rm -rf %{buildroot}
 %{_bindir}/*
 
 
+
+
+%changelog
+* Sun Dec 05 2010 Oden Eriksson <oeriksson@mandriva.com> 0.1.5-6mdv2011.0
++ Revision: 610982
+- rebuild
+
+* Fri Sep 11 2009 Thierry Vignaud <tv@mandriva.org> 0.1.5-5mdv2010.1
++ Revision: 437811
+- rebuild
+
+* Sat Feb 28 2009 Anssi Hannula <anssi@mandriva.org> 0.1.5-4mdv2009.1
++ Revision: 345910
+- fix dlopening libserdisp (P0 from e-tobi)
+- add UTF-8 support (P1 from e-tobi)
+- fix build with gcc 4.3 (P2 from e-tobi)
+
+  + Pixel <pixel@mandriva.com>
+    - do not call ldconfig in %%post/%%postun, it is now handled by filetriggers
+
+* Fri Feb 08 2008 Anssi Hannula <anssi@mandriva.org> 0.1.5-3mdv2008.1
++ Revision: 164197
+- new devel policy
+- merge devel packages
+- relax versioned requires
+
+* Wed Jan 02 2008 Olivier Blin <oblin@mandriva.com> 0.1.5-2mdv2008.1
++ Revision: 140738
+- restore BuildRoot
+
+  + Thierry Vignaud <tv@mandriva.org>
+    - kill re-definition of %%buildroot on Pixel's request
+
+
+* Fri Mar 02 2007 Anssi Hannula <anssi@mandriva.org> 0.1.5-1mdv2007.0
++ Revision: 131124
+- 0.1.5
+- split libraries
+- new major
+- drop patch0, fixed upstream
+- Import graphlcd-base
+
+* Sun Sep 10 2006 Anssi Hannula <anssi@mandriva.org> 0.1.3-2mdv2007.0
+- fix build
+
+* Mon Aug 14 2006 Anssi Hannula <anssi@mandriva.org> 0.1.3-1mdv2007.0
+- initial Mandriva release
+
