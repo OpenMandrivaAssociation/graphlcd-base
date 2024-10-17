@@ -16,7 +16,7 @@ Version:	%{version}
 Release:	%mkrel %{rel}
 License:	GPL
 Group:		System/Kernel and hardware
-URL:		http://graphlcd.berlios.de/
+URL:		https://graphlcd.berlios.de/
 Source:		http://download.berlios.de/graphlcd/%name-%version.tar.bz2
 Patch0:		graphlcd-base-01_libserdisp.dpatch
 Patch1:		graphlcd-base-02_utf8.dpatch
