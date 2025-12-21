@@ -22,6 +22,7 @@ Patch0:		graphlcd-base-01_libserdisp.dpatch
 Patch1:		graphlcd-base-02_utf8.dpatch
 Patch2:		graphlcd-base-03_gcc-43.dpatch
 BuildRoot:	%{_tmppath}/%{name}-root
+BuildRequires:	make
 BuildRequires:	freetype2-devel
 BuildRequires:	zlib-devel
 
